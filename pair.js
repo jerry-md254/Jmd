@@ -1789,25 +1789,28 @@ async function EmpirePair(number, res) {
     handleMessageRevocation(socket, sanitizedNumber);
 
     if (!socket.authState.creds.registered) {
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Wait for socket to stabilize before requesting pair code
+      await new Promise(resolve => setTimeout(resolve, 4000));
       let retries = config.MAX_RETRIES;
       let code;
       while (retries > 0) {
         try {
-          await delay(3000);
+          await delay(2000);
           code = await socket.requestPairingCode(sanitizedNumber);
-          if (code) break;
+          if (code && code !== 'undefined' && code.length > 4) break;
           retries--;
+          await delay(3000);
         } catch (error) {
+          console.log('Pair code attempt failed, retrying...', error?.message);
           retries--;
-          await delay(3000 * (config.MAX_RETRIES - retries));
+          await delay(3000);
         }
       }
       if (!res.headersSent) {
-        if (code) {
+        if (code && code !== 'undefined' && code.length > 4) {
           res.send({ code });
         } else {
-          res.status(500).send({ error: 'Failed to generate pair code. Please try again.' });
+          res.status(500).send({ error: 'Could not generate pair code. Please try again.', code: null });
         }
       }
     }
@@ -2000,8 +2003,34 @@ router.get('/admin/list', async (req, res) => {
 router.get('/', async (req, res) => {
   const { number } = req.query;
   if (!number) return res.status(400).send({ error: 'Number parameter is required' });
-  if (activeSockets.has(number.replace(/[^0-9]/g, ''))) return res.status(200).send({ status: 'already_connected', message: 'This number is already connected' });
-  await EmpirePair(number, res);
+  const sanitized = number.replace(/[^0-9]/g, '');
+  if (activeSockets.has(sanitized)) return res.status(200).send({ status: 'already_connected', message: 'This number is already connected' });
+  
+  // Timeout: agar 25 second mein code na aaye toh error bhejo
+  const timeout = setTimeout(() => {
+    if (!res.headersSent) {
+      res.status(504).send({ error: 'Timeout - please try again', code: null });
+    }
+  }, 25000);
+
+  try {
+    await EmpirePair(number, {
+      headersSent: res.headersSent,
+      send: (data) => {
+        clearTimeout(timeout);
+        if (!res.headersSent) res.send(data);
+      },
+      status: (code) => ({
+        send: (data) => {
+          clearTimeout(timeout);
+          if (!res.headersSent) res.status(code).send(data);
+        }
+      })
+    });
+  } catch(e) {
+    clearTimeout(timeout);
+    if (!res.headersSent) res.status(500).send({ error: 'Internal error - please try again', code: null });
+  }
 });
 
 

@@ -1789,30 +1789,35 @@ async function EmpirePair(number, res) {
     handleMessageRevocation(socket, sanitizedNumber);
 
     if (!socket.authState.creds.registered) {
-      // Wait for socket to stabilize before requesting pair code
-      await new Promise(resolve => setTimeout(resolve, 4000));
-      let retries = config.MAX_RETRIES;
-      let code;
-      while (retries > 0) {
-        try {
-          await delay(2000);
-          code = await socket.requestPairingCode(sanitizedNumber);
-          if (code && code !== 'undefined' && code.length > 4) break;
-          retries--;
-          await delay(3000);
-        } catch (error) {
-          console.log('Pair code attempt failed, retrying...', error?.message);
-          retries--;
-          await delay(3000);
+      // Wait for WebSocket to be ready before requesting pair code
+      setTimeout(async () => {
+        let retries = 5;
+        let code = null;
+        while (retries > 0) {
+          try {
+            code = await socket.requestPairingCode(sanitizedNumber);
+            if (code && code.length > 4) {
+              // Format code nicely: XXXX-XXXX
+              code = code.match(/.{1,4}/g)?.join('-') || code;
+              console.log('✅ Pair code generated:', code);
+              break;
+            }
+            retries--;
+            await delay(3000);
+          } catch (err) {
+            console.log('⚠️ Pair code attempt failed:', err?.message);
+            retries--;
+            await delay(3000);
+          }
         }
-      }
-      if (!res.headersSent) {
-        if (code && code !== 'undefined' && code.length > 4) {
-          res.send({ code });
-        } else {
-          res.status(500).send({ error: 'Could not generate pair code. Please try again.', code: null });
+        if (!res.headersSent) {
+          if (code && code.length > 4) {
+            res.send({ code });
+          } else {
+            res.status(500).send({ error: 'Failed to generate pair code. Please try again.', code: null });
+          }
         }
-      }
+      }, 5000); // wait 5s for socket to stabilize
     }
 
     // Save creds to Mongo when updated
@@ -2004,32 +2009,31 @@ router.get('/', async (req, res) => {
   const { number } = req.query;
   if (!number) return res.status(400).send({ error: 'Number parameter is required' });
   const sanitized = number.replace(/[^0-9]/g, '');
-  if (activeSockets.has(sanitized)) return res.status(200).send({ status: 'already_connected', message: 'This number is already connected' });
-  
-  // Timeout: agar 25 second mein code na aaye toh error bhejo
-  const timeout = setTimeout(() => {
+  if (activeSockets.has(sanitized)) {
+    return res.status(200).send({ status: 'already_connected', message: 'This number is already connected' });
+  }
+
+  // 30 second timeout - agar stuck ho jaye toh proper error aaye
+  const timeoutHandle = setTimeout(() => {
     if (!res.headersSent) {
-      res.status(504).send({ error: 'Timeout - please try again', code: null });
+      res.status(504).send({ error: 'Request timed out. Please try again.', code: null });
     }
-  }, 25000);
+  }, 30000);
+
+  const wrappedRes = {
+    get headersSent() { return res.headersSent; },
+    send: (data) => { clearTimeout(timeoutHandle); if (!res.headersSent) res.send(data); },
+    status: (code) => ({
+      send: (data) => { clearTimeout(timeoutHandle); if (!res.headersSent) res.status(code).send(data); }
+    })
+  };
 
   try {
-    await EmpirePair(number, {
-      headersSent: res.headersSent,
-      send: (data) => {
-        clearTimeout(timeout);
-        if (!res.headersSent) res.send(data);
-      },
-      status: (code) => ({
-        send: (data) => {
-          clearTimeout(timeout);
-          if (!res.headersSent) res.status(code).send(data);
-        }
-      })
-    });
-  } catch(e) {
-    clearTimeout(timeout);
-    if (!res.headersSent) res.status(500).send({ error: 'Internal error - please try again', code: null });
+    await EmpirePair(number, wrappedRes);
+  } catch (e) {
+    clearTimeout(timeoutHandle);
+    console.error('EmpirePair error:', e?.message);
+    if (!res.headersSent) res.status(500).send({ error: 'Internal error. Please try again.', code: null });
   }
 });
 

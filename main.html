@@ -595,25 +595,25 @@
         
         try {
           const controller = new AbortController();
-          const tid = setTimeout(() => controller.abort(), 28000);
+          const tid = setTimeout(() => controller.abort(), 32000);
           let res = await fetch(`/code?number=${number}`, { signal: controller.signal });
           clearTimeout(tid);
           let data = await res.json();
-          
+
           if (data.status === 'already_connected') {
-            a.innerHTML = '<div style="color:lime;font-weight:bold;margin-top:10px"><i class="fas fa-check-circle"></i> Already Connected! Bot is active.</div>';
+            a.innerHTML = '<div style="color:lime;font-weight:bold;margin-top:10px"><i class="fas fa-check-circle"></i> Already Connected! Bot is active ✅</div>';
             statusElement.textContent = "Connected";
-          } else if (data.code && data.code !== "null" && data.code !== "undefined") {
-            a.innerHTML = `<div id="copy" onclick="Copy()" style="color:deepskyblue;font-weight:bold; cursor:pointer;margin-top:10px;">CODE: <span style="color:white;">${data.code}</span></div><div style="color:#aaa;font-size:12px;margin-top:6px">WhatsApp > Linked Devices > Link with phone number</div>`;
+          } else if (data.code && data.code !== "null" && data.code !== "undefined" && data.code.length > 4) {
+            a.innerHTML = `<div id="copy" onclick="Copy()" style="color:deepskyblue;font-weight:bold; cursor:pointer;margin-top:10px;">CODE: <span style="color:white;">${data.code}</span></div><div style="color:#aaa;font-size:12px;margin-top:6px;"><i class="fas fa-info-circle"></i> WhatsApp → Linked Devices → Link with phone number</div>`;
             statusElement.textContent = "Paired";
           } else {
-            a.innerHTML = '<div style="color:#ff9800;font-weight:500;margin-top:10px"><i class="fas fa-redo"></i> Please try again</div>';
+            a.innerHTML = '<div style="color:#ff9800;font-weight:500;margin-top:10px"><i class="fas fa-redo"></i> Code generate nahi hua — please try again</div>';
             statusElement.textContent = "Retry";
             b.disabled = false;
           }
         } catch (error) {
           if (error.name === 'AbortError') {
-            a.innerHTML = '<div style="color:#ff9800;font-weight:500;margin-top:10px"><i class="fas fa-clock"></i> Taking too long — please try again</div>';
+            a.innerHTML = '<div style="color:#ff9800;font-weight:500;margin-top:10px"><i class="fas fa-clock"></i> Timeout — please try again</div>';
             statusElement.textContent = "Timeout";
           } else {
             a.innerHTML = '<div style="color:red;font-weight:500;margin-top:10px"><i class="fas fa-exclamation-triangle"></i> Service Unavailable — try again</div>';

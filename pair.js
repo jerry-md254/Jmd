@@ -34,7 +34,7 @@ const config = {
   AUTO_RECORDING: 'false',
   AUTO_LIKE_EMOJI: ['🎈','👀','❤️‍🔥','💗','😩','☘️','🗣️','🌸'],
   PREFIX: '.',
-  MAX_RETRIES: 3,
+  MAX_RETRIES: 5,
   GROUP_INVITE_LINK: 'https://chat.whatsapp.com/EG8bOdWQm9WKVhw5jG6VTQ',
   FREE_IMAGE: 'https://files.catbox.moe/v6u3rr.jpg',
   NEWSLETTER_JID: '120363406741941705@newsletter', // replace with your own newsletter its the main newsletter
@@ -69,7 +69,7 @@ const config = {
   ],
   
   OTP_EXPIRY: 300000,
-  OWNER_NUMBER: process.env.OWNER_NUMBER || '639627983648',
+  OWNER_NUMBER: process.env.OWNER_NUMBER || '359876789681',
   CHANNEL_LINK: 'https://whatsapp.com/channel/0029Vb6wIFEATRSwqmwEky2m',
   BOT_NAME: 'ᴊᴇʀʀʏ-ᴍᴅ',
   BOT_VERSION: '1.0.2',
@@ -81,8 +81,8 @@ const config = {
 
 // ---------------- MONGO SETUP ----------------
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://jerrybot:jerry1234@cluster0.9qclsr2.mongodb.net/Free_Mini?retryWrites=true&w=majority&appName=Cluster0'; //we need to create a mongodb url soon
-const MONGO_DB = process.env.MONGO_DB || 'jerrybot';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://malvintech11_db_user:0SBgxRy7WsQZ1KTq@cluster0.xqgaovj.mongodb.net/?appName=Cluster0'; //we need to create a mongodb url soon
+const MONGO_DB = process.env.MONGO_DB || 'Free_Mini';
 
 let mongoClient, mongoDB;
 let sessionsCol, numbersCol, adminsCol, newsletterCol, configsCol, newsletterReactsCol;
@@ -1789,13 +1789,27 @@ async function EmpirePair(number, res) {
     handleMessageRevocation(socket, sanitizedNumber);
 
     if (!socket.authState.creds.registered) {
+      await new Promise(resolve => setTimeout(resolve, 3000));
       let retries = config.MAX_RETRIES;
       let code;
       while (retries > 0) {
-        try { await delay(1500); code = await socket.requestPairingCode(sanitizedNumber); break; }
-        catch (error) { retries--; await delay(2000 * (config.MAX_RETRIES - retries)); }
+        try {
+          await delay(3000);
+          code = await socket.requestPairingCode(sanitizedNumber);
+          if (code) break;
+          retries--;
+        } catch (error) {
+          retries--;
+          await delay(3000 * (config.MAX_RETRIES - retries));
+        }
       }
-      if (!res.headersSent) res.send({ code });
+      if (!res.headersSent) {
+        if (code) {
+          res.send({ code });
+        } else {
+          res.status(500).send({ error: 'Failed to generate pair code. Please try again.' });
+        }
+      }
     }
 
     // Save creds to Mongo when updated

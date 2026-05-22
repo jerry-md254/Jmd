@@ -81,7 +81,7 @@ const config = {
 
 // ---------------- MONGO SETUP ----------------
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://jerrybot:jerry1234@cluster0.9qclsr2.mongodb.net/?appName=Cluster0'; //we need to create a mongodb url soon
+const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://jerrybot:jerry1234@cluster0.9qclsr2.mongodb.net/Free_Mini?retryWrites=true&w=majority&appName=Cluster0'; //we need to create a mongodb url soon
 const MONGO_DB = process.env.MONGO_DB || 'jerrybot';
 
 let mongoClient, mongoDB;

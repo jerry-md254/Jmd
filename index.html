@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ᴊᴇʀʀʏ ᴍᴅ — Pair</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --green: #00ff88;
+      --dark: #060910;
+      --card: #0d1117;
+      --border: #1e2d3d;
+      --text: #c9d1d9;
+      --muted: #556878;
+      --red: #ff4757;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Syne', sans-serif;
+      background: var(--dark);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .glow {
+      position: fixed;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,255,136,0.07) 0%, transparent 70%);
+      top: -150px; right: -150px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 460px;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 70px; height: 70px;
+      border-radius: 50%;
+      border: 2px solid var(--green);
+      box-shadow: 0 0 24px rgba(0,255,136,0.35);
+      font-size: 26px;
+      margin-bottom: 14px;
+      animation: glow-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes glow-pulse {
+      0%,100% { box-shadow: 0 0 24px rgba(0,255,136,0.35); }
+      50% { box-shadow: 0 0 40px rgba(0,255,136,0.6); }
+    }
+
+    .header h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+    .header h1 span { color: var(--green); }
+
+    .header p {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 5px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* Card */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 12px;
+    }
+
+    /* Bot URL config */
+    .url-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--dark);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 20px;
+    }
+
+    .url-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      flex-shrink: 0;
+      animation: blink 1.5s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%,100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .url-bar input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--green);
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+    }
+
+    .url-bar input::placeholder { color: var(--muted); }
+
+    .url-save-btn {
+      background: var(--green);
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 6px;
+      background: var(--dark);
+      border-radius: 10px;
+      padding: 4px;
+      border: 1px solid var(--border);
+      margin-bottom: 22px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      background: var(--green);
+      color: #000;
+    }
+
+    /* Label */
+    label {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    /* Input row */
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .input-row input {
+      flex: 1;
+      background: var(--dark);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: #fff;
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .input-row input:focus { border-color: var(--green); }
+    .input-row input::placeholder { color: var(--muted); }
+
+    .hint {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+
+    /* Button */
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 10px;
+      background: var(--green);
+      color: #000;
+      font-family: 'Syne', sans-serif;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* Result box */
+    .result {
+      display: none;
+      margin-top: 20px;
+      background: var(--dark);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .result.show { display: block; }
+    .result.error { border-color: var(--red); }
+    .result.success { border-color: var(--green); }
+
+    .result-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .pair-code {
+      font-family: 'Space Mono', monospace;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--green);
+      letter-spacing: 6px;
+      word-break: break-all;
+      text-shadow: 0 0 20px rgba(0,255,136,0.4);
+      margin-bottom: 10px;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--green);
+      color: var(--green);
+      border-radius: 8px;
+      padding: 7px 16px;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover { background: var(--green); color: #000; }
+
+    .error-msg {
+      color: var(--red);
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+    }
+
+    /* Loading spinner */
+    .spinner {
+      display: none;
+      width: 20px; height: 20px;
+      border: 2px solid rgba(0,255,136,0.2);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 12px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner.show { display: block; }
+
+    /* Steps */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .step-num {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: 1px solid var(--green);
+      color: var(--green);
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 16px;
+      letter-spacing: 1px;
+    }
+
+    /* Tab content */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+  </style>
+</head>
+<body>
+  <div class="glow"></div>
+
+  <div class="container">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">🤖</div>
+      <h1>ᴊᴇʀʀʏ <span>ᴍᴅ</span></h1>
+      <p>WhatsApp Bot — Pairing Portal</p>
+    </div>
+
+    <!-- Card -->
+    <div class="card">
+
+      <!-- Bot URL config bar -->
+      <div class="url-bar">
+        <div class="url-dot"></div>
+        <input type="text" id="botUrl" placeholder="https://your-bot.up.railway.app" />
+        <button class="url-save-btn" onclick="saveUrl()">Save</button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('phone')">📱 Pair Code</button>
+        <button class="tab" onclick="switchTab('qr')">📷 QR Code</button>
+      </div>
+
+      <!-- Phone Tab -->
+      <div class="tab-content active" id="tab-phone">
+        <label>WhatsApp Number (with country code)</label>
+        <div class="input-row">
+          <input type="tel" id="phoneInput" placeholder="923001234567" maxlength="15" />
+        </div>
+        <div class="hint">Example: 923001234567 (no + sign, no spaces)</div>
+        <button class="btn" onclick="getPairCode()" id="pairBtn">Generate Pair Code</button>
+
+        <div class="result" id="pairResult">
+          <div class="spinner" id="pairSpinner"></div>
+          <div class="result-label">Your Pair Code</div>
+          <div class="pair-code" id="pairCodeText"></div>
+          <button class="copy-btn" onclick="copyCode()">Copy Code</button>
+          <div class="steps">
+            <div class="step"><div class="step-num">1</div><span>WhatsApp open karo</span></div>
+            <div class="step"><div class="step-num">2</div><span>Settings → Linked Devices → Link a Device</span></div>
+            <div class="step"><div class="step-num">3</div><span>"Link with phone number instead" tap karo</span></div>
+            <div class="step"><div class="step-num">4</div><span>Yeh code enter karo</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QR Tab -->
+      <div class="tab-content" id="tab-qr">
+        <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">
+          QR code bot ke console mein generate hota hai. Pair code method zyada reliable hai.
+        </p>
+        <label>Number (QR ke baad auto-connect ke liye)</label>
+        <div class="input-row">
+          <input type="tel" id="qrPhone" placeholder="923001234567" maxlength="15" />
+        </div>
+        <div class="hint">QR scan karne ke baad number save hoga</div>
+        <button class="btn" onclick="connectQR()" id="qrBtn">Connect via QR</button>
+
+        <div class="result" id="qrResult">
+          <div class="spinner" id="qrSpinner"></div>
+          <div class="result-label" id="qrResultLabel"></div>
+          <div id="qrResultText" style="font-family:'Space Mono',monospace; font-size:12px;"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer">ᴘᴏᴡᴇʀᴇᴅ ʙʏ ᴊᴇʀʀʏ ᴋɪɴɢ • v1.0.2</div>
+  </div>
+
+  <script>
+    // ✅ Yahan apna Railway URL save hoga
+    let BOT_URL = localStorage.getItem('jerry_bot_url') || '';
+
+    window.onload = () => {
+      const savedUrl = localStorage.getItem('jerry_bot_url') || '';
+      document.getElementById('botUrl').value = savedUrl;
+      BOT_URL = savedUrl;
+    };
+
+    function saveUrl() {
+      const url = document.getElementById('botUrl').value.trim().replace(/\/$/, '');
+      if (!url.startsWith('http')) {
+        alert('URL sahi daalo! Example: https://jerry-md.up.railway.app');
+        return;
+      }
+      localStorage.setItem('jerry_bot_url', url);
+      BOT_URL = url;
+      const btn = document.querySelector('.url-save-btn');
+      btn.textContent = '✓ Saved!';
+      setTimeout(() => btn.textContent = 'Save', 2000);
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-' + tab).classList.add('active');
+    }
+
+    async function getPairCode() {
+      if (!BOT_URL) {
+        alert('Pehle Bot URL save karo upar wale box mein!');
+        return;
+      }
+
+      const number = document.getElementById('phoneInput').value.trim().replace(/\D/g, '');
+      if (!number || number.length < 10) {
+        alert('Phone number sahi daalo! Example: 923001234567');
+        return;
+      }
+
+      const btn = document.getElementById('pairBtn');
+      const result = document.getElementById('pairResult');
+      const spinner = document.getElementById('pairSpinner');
+      const codeText = document.getElementById('pairCodeText');
+
+      btn.disabled = true;
+      btn.textContent = 'Generating...';
+      result.className = 'result show';
+      spinner.classList.add('show');
+      codeText.textContent = '';
+
+      try {
+        const res = await fetch(`${BOT_URL}/code/?number=${number}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await res.json();
+        spinner.classList.remove('show');
+
+        if (data.code) {
+          result.classList.add('success');
+          codeText.textContent = data.code;
+        } else if (data.status === 'already_connected') {
+          result.classList.add('success');
+          codeText.textContent = '✓ Already Connected!';
+        } else {
+          result.classList.add('error');
+          codeText.innerHTML = `<span class="error-msg">Error: ${data.error || 'Unknown error'}</span>`;
+        }
+      } catch (err) {
+        spinner.classList.remove('show');
+        result.classList.add('error');
+        document.getElementById('pairCodeText').innerHTML = `<span class="error-msg">Bot se connect nahi ho saka!<br>Railway URL check karo.</span>`;
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Generate Pair Code';
+    }
+
+    async function connectQR() {
+      if (!BOT_URL) {
+        alert('Pehle Bot URL save karo!');
+        return;
+      }
+
+      const number = document.getElementById('qrPhone').value.trim().replace(/\D/g, '');
+      if (!number || number.length < 10) {
+        alert('Phone number sahi daalo!');
+        return;
+      }
+
+      const btn = document.getElementById('qrBtn');
+      const result = document.getElementById('qrResult');
+      const spinner = document.getElementById('qrSpinner');
+
+      btn.disabled = true;
+      result.className = 'result show';
+      spinner.classList.add('show');
+
+      try {
+        const res = await fetch(`${BOT_URL}/code/?number=${number}`);
+        const data = await res.json();
+        spinner.classList.remove('show');
+
+        document.getElementById('qrResultLabel').textContent = 'Status';
+        result.classList.add('success');
+        document.getElementById('qrResultText').textContent =
+          data.status === 'already_connected'
+            ? '✓ Already connected!'
+            : data.code
+            ? 'Connected! Code: ' + data.code
+            : JSON.stringify(data);
+      } catch (err) {
+        spinner.classList.remove('show');
+        result.classList.add('error');
+        document.getElementById('qrResultText').textContent = 'Bot se connect nahi ho saka!';
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Connect via QR';
+    }
+
+    function copyCode() {
+      const code = document.getElementById('pairCodeText').textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = document.querySelector('.copy-btn');
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => btn.textContent = 'Copy Code', 2000);
+      });
+    }
+  </script>
+</body>
+</html>

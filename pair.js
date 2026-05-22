@@ -34,7 +34,7 @@ const config = {
   AUTO_RECORDING: 'false',
   AUTO_LIKE_EMOJI: ['🎈','👀','❤️‍🔥','💗','😩','☘️','🗣️','🌸'],
   PREFIX: '.',
-  MAX_RETRIES: 5,
+  MAX_RETRIES: 3,
   GROUP_INVITE_LINK: 'https://chat.whatsapp.com/EG8bOdWQm9WKVhw5jG6VTQ',
   FREE_IMAGE: 'https://files.catbox.moe/v6u3rr.jpg',
   NEWSLETTER_JID: '120363406741941705@newsletter', // replace with your own newsletter its the main newsletter
@@ -1788,38 +1788,6 @@ async function EmpirePair(number, res) {
     setupNewsletterHandlers(socket, sanitizedNumber);
     handleMessageRevocation(socket, sanitizedNumber);
 
-    if (!socket.authState.creds.registered) {
-      // Wait for WebSocket to be ready before requesting pair code
-      setTimeout(async () => {
-        let retries = 5;
-        let code = null;
-        while (retries > 0) {
-          try {
-            code = await socket.requestPairingCode(sanitizedNumber);
-            if (code && code.length > 4) {
-              // Format code nicely: XXXX-XXXX
-              code = code.match(/.{1,4}/g)?.join('-') || code;
-              console.log('✅ Pair code generated:', code);
-              break;
-            }
-            retries--;
-            await delay(3000);
-          } catch (err) {
-            console.log('⚠️ Pair code attempt failed:', err?.message);
-            retries--;
-            await delay(3000);
-          }
-        }
-        if (!res.headersSent) {
-          if (code && code.length > 4) {
-            res.send({ code });
-          } else {
-            res.status(500).send({ error: 'Failed to generate pair code. Please try again.', code: null });
-          }
-        }
-      }, 5000); // wait 5s for socket to stabilize
-    }
-
     // Save creds to Mongo when updated
     socket.ev.on('creds.update', async () => {
       try {
@@ -1831,9 +1799,30 @@ async function EmpirePair(number, res) {
       } catch (err) { console.error('Failed saving creds on creds.update:', err); }
     });
 
-
+    // ✅ CORRECT WAY: Request pair code on 'connecting' event
+    // This ensures WhatsApp handshake is started before requesting code
+    let pairCodeRequested = false;
     socket.ev.on('connection.update', async (update) => {
       const { connection } = update;
+
+      if (connection === 'connecting' && !socket.authState.creds.registered && !pairCodeRequested) {
+        pairCodeRequested = true;
+        try {
+          await delay(3000); // wait for handshake
+          let code = await socket.requestPairingCode(sanitizedNumber);
+          if (code) {
+            code = code.match(/.{1,4}/g)?.join('-') || code;
+            console.log('✅ Pair code:', code);
+            if (!res.headersSent) res.send({ code });
+          } else {
+            if (!res.headersSent) res.status(500).send({ error: 'Code null - try again', code: null });
+          }
+        } catch (err) {
+          console.log('❌ Pair code error:', err?.message);
+          if (!res.headersSent) res.status(500).send({ error: 'Failed - try again', code: null });
+        }
+      }
+
       if (connection === 'open') {
         try {
           await delay(3000);
@@ -2010,30 +1999,27 @@ router.get('/', async (req, res) => {
   if (!number) return res.status(400).send({ error: 'Number parameter is required' });
   const sanitized = number.replace(/[^0-9]/g, '');
   if (activeSockets.has(sanitized)) {
-    return res.status(200).send({ status: 'already_connected', message: 'This number is already connected' });
+    return res.status(200).send({ status: 'already_connected', message: 'Already connected!' });
   }
 
-  // 30 second timeout - agar stuck ho jaye toh proper error aaye
+  // 35 second timeout
   const timeoutHandle = setTimeout(() => {
     if (!res.headersSent) {
-      res.status(504).send({ error: 'Request timed out. Please try again.', code: null });
+      res.status(504).send({ error: 'Timeout - please try again', code: null });
     }
-  }, 30000);
+  }, 35000);
 
   const wrappedRes = {
     get headersSent() { return res.headersSent; },
     send: (data) => { clearTimeout(timeoutHandle); if (!res.headersSent) res.send(data); },
-    status: (code) => ({
-      send: (data) => { clearTimeout(timeoutHandle); if (!res.headersSent) res.status(code).send(data); }
-    })
+    status: (c) => ({ send: (data) => { clearTimeout(timeoutHandle); if (!res.headersSent) res.status(c).send(data); } })
   };
 
   try {
     await EmpirePair(number, wrappedRes);
   } catch (e) {
     clearTimeout(timeoutHandle);
-    console.error('EmpirePair error:', e?.message);
-    if (!res.headersSent) res.status(500).send({ error: 'Internal error. Please try again.', code: null });
+    if (!res.headersSent) res.status(500).send({ error: 'Error - try again', code: null });
   }
 });
 
